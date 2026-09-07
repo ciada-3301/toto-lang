@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "toto-lang"
+version = "0.2.0"
+description = "Toto-English-Bengali translation engine with LLM-powered morphological analysis and Unicode 14.0 script support."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Toto Documentation Initiative"},
+]
+keywords = ["toto", "translation", "nlp", "endangered-language", "sino-tibetan", "unicode"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "openai>=1.0",
+    "flask>=3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/toto-lang/toto-python"
+
+[tool.setuptools.packages.find]
+include = ["toto*"]
+
+[tool.setuptools.package-data]
+toto = [
+    "resources/data/*.jsonl",
+    "resources/grammar/*.md",
+    "resources/docs/*.pdf",
+    "templates/*.html",
+    "static/css/*.css",
+    "static/js/*.js",
+]
