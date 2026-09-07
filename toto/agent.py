@@ -153,8 +153,12 @@ def _extract_json_payload(content: str, reasoning: str = "") -> dict:
             if val and not val.startswith("We need"):
                 gloss_match = re.search(r'"literal_gloss"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
                 notes_match = re.search(r'"notes"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+                eng_match = re.search(r'"english"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+                bn_match = re.search(r'"bengali"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
                 return {
                     "toto": val,
+                    "english": eng_match.group(1) if eng_match else "",
+                    "bengali": bn_match.group(1) if bn_match else "",
                     "literal_gloss": gloss_match.group(1) if gloss_match else "",
                     "notes": notes_match.group(1) if notes_match else "",
                 }
@@ -252,9 +256,9 @@ class TotoAgent:
         base_url: str | None = None,
         model: str | None = None,
     ):
-        self._api_key = api_key or get_api_key()
-        self._base_url = base_url or get_base_url()
-        self._model = model or get_model()
+        self._api_key = api_key if api_key is not None else get_api_key()
+        self._base_url = base_url if base_url is not None else get_base_url()
+        self._model = model if model is not None else get_model()
         self._client = None
         self._system_prompt: str | None = None
 
@@ -320,19 +324,23 @@ class TotoAgent:
         if lang_code in ("bn", "bengali", "bangla"):
             bengali_text = clean_text
             english_text = bengali_to_english(bengali_text)
+            source_context = f'Source text (Bengali or Romanized Bengali): "{clean_text}"'
         else:
             english_text = clean_text
             bengali_text = english_to_bengali(english_text)
+            source_context = f'Source text (English): "{clean_text}"'
 
         client = self._get_client()
 
         user_prompt = (
-            f'Translate this English text into authentic Romanized Toto:\n'
-            f'"{english_text}"\n\n'
+            f'{source_context}\n\n'
+            f'Translate this sentence into authentic Romanized Toto.\n'
             f'After your internal thinking, conclude with </think> and output strictly a valid JSON object with keys:\n'
-            f'- "toto": (string)\n'
-            f'- "literal_gloss": (string)\n'
-            f'- "notes": (string)'
+            f'- "english": (string, clean standard English sentence)\n'
+            f'- "bengali": (string, clean standard Bengali script sentence)\n'
+            f'- "toto": (string, authentic Romanized Toto translation)\n'
+            f'- "literal_gloss": (string, morpheme breakdown)\n'
+            f'- "notes": (string, grammatical synthesis explanation)'
         )
 
         try:
@@ -367,6 +375,22 @@ class TotoAgent:
                 raw_content=content,
                 raw_reasoning=reasoning[:500],
             )
+
+        # Canonical normalization from model's multilingual understanding
+        model_english = (payload.get("english") or "").strip()
+        model_bengali = (payload.get("bengali") or "").strip()
+
+        if model_english:
+            if not english_text or english_text.strip().lower() == clean_text.strip().lower():
+                english_text = model_english
+            elif lang_code in ("bn", "bengali", "bangla") and not any(ord(c) > 127 for c in clean_text):
+                # Input was Romanized Bengali (ASCII) -> use model's standard English
+                english_text = model_english
+
+        if model_bengali:
+            if not bengali_text or (not any(ord(c) > 127 for c in bengali_text) and any(ord(c) > 127 for c in model_bengali)):
+                # If input or current text was Romanized, upgrade to authentic Bengali script
+                bengali_text = model_bengali
 
         roman = payload["toto"]
         script = ""
