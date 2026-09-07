@@ -11,6 +11,8 @@ Users can override any setting via toto.configure(...).
 """
 
 import os
+import sys
+import inspect
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -57,16 +59,79 @@ def _parse_env_file(filepath: Path) -> dict[str, str]:
 
 
 def _discover_env_file() -> Path | None:
-    """Walk upward from cwd looking for a .env file."""
-    current = Path(os.getcwd()).resolve()
-    for _ in range(20):  # safety limit
-        candidate = current / ".env"
+    """Find a .env file by checking script directories, caller frames, and cwd."""
+    search_roots: list[Path] = []
+
+    # 1. Directory of the running script (sys.argv[0] and __main__)
+    if sys.argv and sys.argv[0]:
+        try:
+            arg_p = Path(sys.argv[0]).resolve()
+            search_roots.append(arg_p.parent if arg_p.is_file() else arg_p)
+        except Exception:
+            pass
+
+    try:
+        import __main__
+        if hasattr(__main__, "__file__") and __main__.__file__:
+            main_p = Path(__main__.__file__).resolve()
+            search_roots.append(main_p.parent)
+    except Exception:
+        pass
+
+    # 2. Caller frames from inspect.stack
+    try:
+        for frame_info in inspect.stack():
+            fn = frame_info.filename
+            if fn and not fn.startswith("<") and "site-packages" not in fn and "toto" not in fn:
+                p = Path(fn).resolve()
+                if p.is_file():
+                    search_roots.append(p.parent)
+    except Exception:
+        pass
+
+    # 3. Current working directory
+    try:
+        search_roots.append(Path(os.getcwd()).resolve())
+    except Exception:
+        pass
+
+    # Deduplicate while preserving priority order
+    seen = set()
+    unique_roots = []
+    for root in search_roots:
+        if root not in seen:
+            seen.add(root)
+            unique_roots.append(root)
+
+    # First pass: direct .env file in candidate roots
+    for root in unique_roots:
+        candidate = root / ".env"
         if candidate.is_file():
             return candidate
-        parent = current.parent
-        if parent == current:
-            break
-        current = parent
+
+    # Second pass: check immediate subdirectories (e.g. test_env/.env)
+    for root in unique_roots:
+        try:
+            for sub in root.iterdir():
+                if sub.is_dir() and not sub.name.startswith("."):
+                    candidate = sub / ".env"
+                    if candidate.is_file():
+                        return candidate
+        except Exception:
+            pass
+
+    # Third pass: walk upward from each root
+    for root in unique_roots:
+        current = root
+        for _ in range(20):
+            candidate = current / ".env"
+            if candidate.is_file():
+                return candidate
+            parent = current.parent
+            if parent == current:
+                break
+            current = parent
+
     return None
 
 
@@ -106,10 +171,10 @@ def _find_env_key(var_name: str | None = None) -> str:
 
 
 def _load_env_if_needed() -> None:
-    """Load .env once and resolve the API key."""
-    if _config["_env_loaded"]:
+    """Load .env and resolve configuration."""
+    # If API key is already resolved, don't redo discovery
+    if _config.get("api_key"):
         return
-    _config["_env_loaded"] = True
 
     env_file = _discover_env_file()
     if env_file:
@@ -123,6 +188,7 @@ def _load_env_if_needed() -> None:
     key = _find_env_key(_config.get("api_key_var"))
     if key:
         _config["api_key"] = key
+        _config["_env_loaded"] = True
 
     # Resolve optional overrides from environment
     for env_var, config_key in [
