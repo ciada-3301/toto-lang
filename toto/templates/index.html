@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toto–English–Bengali Translation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+Toto&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+Bengali:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-brand">
+                <span class="header-tag">TRILATERAL LINGUISTIC TRANSLATION SYSTEM</span>
+                <h1 class="header-title">Toto – English – Bengali Translation Agent</h1>
+            </div>
+            <div class="header-status">
+                <span class="status-indicator"></span>
+                <span class="status-label">{{ model_name }}</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Dual Input Section (English & Bengali) -->
+        <div class="input-grid">
+            <!-- English Box -->
+            <section class="card input-card" id="english-card">
+                <div class="card-header">
+                    <span class="card-title">1. English</span>
+                    <span class="char-counter" id="english-char-count">0 characters</span>
+                </div>
+                <textarea 
+                    id="english-input" 
+                    class="text-input" 
+                    placeholder="Type in English..." 
+                    rows="4" 
+                    spellcheck="false" 
+                    autofocus></textarea>
+                <div class="box-badge" id="english-badge">Active Input</div>
+            </section>
+
+            <!-- Bengali Box -->
+            <section class="card input-card" id="bengali-card">
+                <div class="card-header">
+                    <span class="card-title">2. Bengali (বাংলা)</span>
+                    <span class="char-counter" id="bengali-char-count">0 characters</span>
+                </div>
+                <textarea 
+                    id="bengali-input" 
+                    class="text-input bengali-font" 
+                    placeholder="বাংলায় লিখুন (Type in Bengali)..." 
+                    rows="4" 
+                    spellcheck="false"></textarea>
+                <div class="box-badge" id="bengali-badge">Active Input</div>
+            </section>
+        </div>
+
+        <!-- Action Control Bar -->
+        <div class="action-bar">
+            <div class="hint-text" id="action-hint">Enter English or Bengali text, then click Translate (or Ctrl+Enter)</div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" id="clear-btn">Clear All</button>
+                <button type="button" class="btn btn-primary" id="translate-btn">Translate to Toto</button>
+            </div>
+        </div>
+
+        <!-- Reference Phrase Chips -->
+        <section class="reference-section">
+            <span class="reference-label">Sample Inputs:</span>
+            <div class="chips-container" id="chips-container">
+                <button class="chip" data-lang="en" data-text="They should not stay outside">EN: They should not stay outside</button>
+                <button class="chip" data-lang="bn" data-text="তারা বাইরে থাকা উচিত নয়">BN: তারা বাইরে থাকা উচিত নয়</button>
+                <button class="chip" data-lang="en" data-text="I will drink water">EN: I will drink water</button>
+                <button class="chip" data-lang="bn" data-text="আমি জল খাব">BN: আমি জল খাব</button>
+                <button class="chip" data-lang="en" data-text="Where are you going tomorrow?">EN: Where are you going tomorrow?</button>
+                <button class="chip" data-lang="bn" data-text="তুমি কাল কোথায় যাচ্ছ?">BN: তুমি কাল কোথায় যাচ্ছ?</button>
+                <button class="chip" data-lang="en" data-text="Good morning">EN: Good morning</button>
+            </div>
+        </section>
+
+        <!-- Box 3: Toto Translation Output Section -->
+        <section class="card output-card" id="output-card">
+            <div class="card-header">
+                <span class="card-title">3. Toto Output</span>
+                <div class="copy-actions">
+                    <button type="button" class="btn btn-sm btn-secondary" id="copy-script-btn">Copy Script</button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="copy-roman-btn">Copy Roman</button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="copy-all-btn">Copy All</button>
+                </div>
+            </div>
+
+            <!-- Native Toto Script -->
+            <div class="output-block">
+                <div class="block-label">Native Toto Script (Unicode 14.0)</div>
+                <div id="script-output" class="script-display placeholder">Translation will appear here...</div>
+            </div>
+
+            <!-- Romanized Toto -->
+            <div class="output-block">
+                <div class="block-label">Romanized Toto</div>
+                <div id="roman-output" class="roman-display placeholder">&mdash;</div>
+            </div>
+
+            <!-- Interlinear Gloss -->
+            <div class="output-block" id="gloss-block">
+                <div class="block-label">Interlinear Morphological Gloss</div>
+                <div id="gloss-output" class="gloss-display">&mdash;</div>
+            </div>
+
+            <!-- Linguistic Notes -->
+            <div class="output-block" id="notes-block">
+                <div class="block-label">Linguistic Synthesis Notes</div>
+                <div id="notes-output" class="notes-display">&mdash;</div>
+            </div>
+
+            <!-- Model Reasoning Trace (Collapsible) -->
+            <div class="output-block" id="reasoning-block">
+                <details class="reasoning-details">
+                    <summary class="reasoning-summary">Model Chain-of-Thought Reasoning</summary>
+                    <div id="reasoning-output" class="reasoning-display">No reasoning trace available.</div>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="footer-container">
+            <span>Toto Documentation Initiative & Linguistic Archive</span>
+            <span>Totopara, Alipurduar, West Bengal</span>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
