@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "toto-lang"
-version = "0.2.0"
+version = "0.2.1"
 description = "Toto-English-Bengali translation engine with LLM-powered morphological analysis and Unicode 14.0 script support."
 readme = "README.md"
 license = {text = "MIT"}

@@ -24,7 +24,7 @@ Quick Start
 >>> webagent.run(port=5001)
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 # -- Unicode transliteration (no dependencies, always available) ----------
 from .unicode import roman_to_toto, toto_to_roman
